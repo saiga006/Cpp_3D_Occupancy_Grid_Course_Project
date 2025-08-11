@@ -1,1 +1,3 @@
-Data/PLY/*
+src/Data/PLY/*
+build/*
+
