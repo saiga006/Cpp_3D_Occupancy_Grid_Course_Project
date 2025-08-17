@@ -2,7 +2,11 @@
 #include "occupancy_grid.hpp"
 #include "data_analyser.hpp"
 
+#define TEST
+
 int main(int argc, char* argv[]) {
+
+#ifndef TEST
     if (argc != 2) {
         std::cerr << "Usage: " << argv[0] << " <data_directory>" << std::endl;
         return -1;
@@ -85,6 +89,40 @@ int main(int argc, char* argv[]) {
     //OccupancyGrid grid(grid_dims, resolution, optimal_origin);
     
     std::cout << "\n=== STARTING MAPPING ===" << std::endl;
+ #else
+        // Test with small grid first
+    std::cout << "=== TESTING BASIC FUNCTIONALITY ===" << std::endl;
     
+    std::array<size_t, 3> test_dims = {50, 50, 25}; // Small test grid
+    double test_resolution = 1.0; // 1m voxels for testing
+    Vector3d test_origin(-25.0, -25.0, 0.0);
+    
+    OccupancyGrid grid(test_dims, test_resolution, test_origin);
+    
+    // Test coordinate conversions
+    Vector3d test_world(5.5, -3.2, 2.8);
+    Vector3i test_grid = grid.world_to_grid(test_world);
+    Vector3d back_world = grid.grid_to_world(test_grid);
+    
+    std::cout << "Coordinate Conversion Test:" << std::endl;
+    std::cout << "  World: " << test_world.transpose() << std::endl;
+    std::cout << "  Grid: " << test_grid.transpose() << std::endl;
+    std::cout << "  Back to World: " << back_world.transpose() << std::endl;
+    std::cout << "  In Bounds: " << (grid.is_InBounds(test_grid) ? "YES" : "NO") << std::endl;
+    
+    // Test occupancy updates
+    grid.update_occupied(test_grid);
+    std::cout << "  Occupancy after update: " << grid.getOccupancy(test_grid) << std::endl;
+    
+    // Test multiple updates
+    for (int i = 0; i < 5; ++i) {
+        grid.update_occupied(test_grid);
+    }
+    std::cout << "  Occupancy after 5 updates: " << grid.getOccupancy(test_grid) << std::endl;
+    
+    std::cout << "\n=== BASIC FUNCTIONALITY TEST COMPLETED ===" << std::endl;
+ #endif
+
+
     return 0;
 }
