@@ -24,7 +24,7 @@ target_include_directories(visualizer INTERFACE src/visualizer)
 target_link_libraries(visualizer INTERFACE Open3D::Open3D Eigen3::Eigen)
 
 #will have occupancy grid logic
-add_executable(occupancy_grid_main src/main.cpp)
+add_executable(occupancy_grid_main src/main.cpp src/data_analyser.cpp)
 
 target_link_libraries(occupancy_grid_main PRIVATE dataloader visualizer)
 
