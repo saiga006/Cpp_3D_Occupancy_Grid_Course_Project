@@ -3,6 +3,7 @@
 #include <Eigen/Core>
 #include <array>
 #include <vector>
+#include <unordered_set>
 
 using Vector3dVector = std::vector<Eigen::Vector3d>;
 using Vector3d = Eigen::Vector3d;
@@ -15,7 +16,19 @@ class OccupancyGrid {
         double voxel_resolution;
         // links grid coordinates with world coordinates
         Vector3d grid_origin;
+        // has the occupancy grid probability data
         std::vector<float> grid_data;
+        // Hash function for Vector3i
+        struct Vector3iHash {
+            size_t operator()(const Eigen::Vector3i& v) const {
+                return std::hash<int>()(v.x()) ^ 
+                       (std::hash<int>()(v.y()) << 1) ^
+                       (std::hash<int>()(v.z()) << 2);
+            }
+        };
+        // additional storage for fast lookup of occupied cells, would be updated as part of ray tracing
+        std::unordered_set<Vector3i,Vector3iHash> occupied_cells;
+
         // connects the start and end point of lidar ray in voxel map
         std::vector<Vector3i> draw_bresenham3d_line(const Vector3i& start, const Vector3i& end) const;
         // updates the log odds in the grid data for the voxel

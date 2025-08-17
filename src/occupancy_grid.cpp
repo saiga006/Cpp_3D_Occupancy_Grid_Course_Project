@@ -16,7 +16,8 @@ OccupancyGrid::OccupancyGrid(const std::array<size_t, 3>& dimensions,
 
     size_t total_cells = grid_dimensions[0] * grid_dimensions[1] * grid_dimensions[2];
     grid_data.resize(total_cells,0.0f);
-    
+    size_t estimated_occupancy_size = total_cells / 1000; // estimate %0.1 occupancy
+    occupied_cells.reserve(estimated_occupancy_size);
     std::cout << "OccupancyGrid3D initialized:" << std::endl;
     std::cout << "  Dimensions: " << grid_dimensions[0] << "×" << grid_dimensions[1] << "×" << grid_dimensions[2] << std::endl;
     std::cout << "  Resolution: " << voxel_resolution << "m" << std::endl;
@@ -62,6 +63,12 @@ void OccupancyGrid::update_occupied(const Vector3i& idx) {
     size_t index = to_LinearIndex(idx);
     grid_data[index] = std::clamp(grid_data[index]+ LOG_ODDS_OCCUPIED,
          LOG_ODDS_MIN, LOG_ODDS_MAX);
+
+    // NEW: Track in auxiliary structure
+    float prob = 1.0f / (1.0f + std::exp(-grid_data[index]));
+    if (prob > 0.5f) {  // Threshold for "occupied"
+        occupied_cells.insert(idx);
+    }
 }
 
 // updates occupancy
@@ -70,6 +77,11 @@ void OccupancyGrid::update_free(const Vector3i& idx) {
     size_t index = to_LinearIndex(idx);
     grid_data[index] = std::clamp(grid_data[index]+ LOG_ODDS_FREE,
          LOG_ODDS_MIN, LOG_ODDS_MAX);
+
+    float prob = 1.0f / (1.0f + std::exp(-grid_data[index]));
+    if (prob <= 0.5f) {
+        occupied_cells.erase(idx);
+    }
 }
 
 // Simple getOccupancy for testing
@@ -222,8 +234,24 @@ void OccupancyGrid::rayTrace(const Vector3d& start, const Vector3d& end) {
 }
 
 Vector3dVector OccupancyGrid::getOccupiedVoxels(float threshold) const {
-    // TODO: Implement visualization extraction
-    // PRIORITY: HIGH - Needed for final visualization
+// Implement visualization extraction
     Vector3dVector occupied_points;
+    occupied_points.reserve(occupied_cells.size());  // Estimated occupancy
+    
+    std::for_each(occupied_cells.begin(), occupied_cells.end(),
+        [this, &occupied_points, threshold](const Vector3i& idx){
+            size_t linear_idx = to_LinearIndex(idx);
+            float prob = 1.0f / (1.0f + std::exp(-grid_data[linear_idx]));
+            if (prob > threshold) {
+                occupied_points.emplace_back(grid_to_world(idx));
+            }
+        }
+    );
+    
+    std::cout << "Extracted " << occupied_points.size() 
+              << " occupied voxels from " << occupied_cells.size() 
+              << " tracked voxels (vs " << (grid_dimensions[0] * grid_dimensions[1] * grid_dimensions[2]) 
+              << " total voxels)" << std::endl;
+
     return occupied_points;
 }
