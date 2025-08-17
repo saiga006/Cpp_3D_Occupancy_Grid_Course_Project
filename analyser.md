@@ -60,3 +60,24 @@ Grid covers: [-149.2 -236.9   -9.5] to [155.6 141.5  43.1]
 === STARTING MAPPING ===
 saiga@sai-Ideapad:~/Downloads/ModernCppProject2025/build$ cd ..
 ```
+
+### Basic Functionality Test
+
+```bash
+saiga@sai-Ideapad:~/Downloads/ModernCppProject2025/build$ ./occupancy_grid_main 
+=== TESTING BASIC FUNCTIONALITY ===
+OccupancyGrid3D initialized:
+  Dimensions: 50×50×25
+  Resolution: 1m
+  Origin: -25 -25   0
+  Total voxels: 62500
+Coordinate Conversion Test:
+  World:  5.5 -3.2  2.8
+  Grid: 30 21  2
+  Back to World:  5.5 -3.5  2.5
+  In Bounds: YES
+  Occupancy after update: 0.85
+  Occupancy after 5 updates: 5
+
+=== BASIC FUNCTIONALITY TEST COMPLETED ===
+```

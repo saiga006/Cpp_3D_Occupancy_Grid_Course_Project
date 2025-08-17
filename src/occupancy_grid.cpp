@@ -78,24 +78,146 @@ float OccupancyGrid::getOccupancy(const Vector3i& grid_index) const {
     return grid_data[to_LinearIndex(grid_index)];
 }
 
-// PLACEHOLDER FUNCTIONS - IMPLEMENT
 std::vector<Vector3i> OccupancyGrid::draw_bresenham3d_line(const Vector3i& start, const Vector3i& end) const {
-    // TODO: Implement 3D Bresenham algorithm
-    // PRIORITY: CRITICAL - Core mapping algorithm
+    //Implement 3D Bresenham algorithm - adapted from 2D impl. mentioned in https://youtu.be/CceepU1vIKo, https://youtu.be/8gIhNSAXYcQ
     std::vector<Vector3i> voxels;
-    voxels.push_back(start);
-    voxels.push_back(end);  // Temporary placeholder
+
+    int x0 = start.x(), y0 = start.y(), z0 = start.z();
+    int x1 = end.x(), y1 = end.y(), z1 = end.z();
+
+    const int dx = std::abs(x1 - x0);
+    const int dy = std::abs(y1- y0);
+    const int dz = std::abs(z1 - z0);
+
+    voxels.reserve(std::max({dx,dy,dz})+1);
+    auto drawLineH = [&]() {
+        if (x0 > x1) {
+            std::swap(x0,x1);
+            std::swap(y0,y1);
+            std::swap(z0,z1);
+        }
+        //direction control for non-driving axes 
+        int dir_y = (y1 >= y0) ? 1: -1;
+        int dir_z = (z1 >= z0) ? 1 : -1;
+
+        // decision parameters
+        int p1 = 2 * dy - dx;
+        int p2 = 2 * dz - dx;
+
+        int y = y0, z = z0;
+
+        for (int x= x0; x <= x1; ++x) {
+            voxels.emplace_back(Vector3i(x,y,z));
+            if (x == x1) break; // once reach the end point, stop processing
+            
+            if(p1 >=0) {
+                y+=dir_y;
+                p1 -= 2 * dx;
+            }
+            if (p2 >=0) {
+                z+=dir_z;
+                p2 -= 2 * dx;
+            }
+            p1 += 2 * dy;
+            p2 += 2 * dz;
+        }
+    };
+
+    auto drawLineV = [&]() {
+        if (y0 > y1) {
+            std::swap(x0,x1);
+            std::swap(y0,y1);
+            std::swap(z0,z1);
+        }
+        //direction control for non-driving axes 
+        int dir_x = (x1 >= x0) ? 1: -1;
+        int dir_z = (z1 >= z0) ? 1 : -1;
+
+        // decision parameters
+        int p1 = 2 * dx - dy;
+        int p2 = 2 * dz - dy;
+
+        int x = x0, z = z0;
+
+        for (int y= y0; y <= y1; ++y) {
+            voxels.emplace_back(Vector3i(x,y,z));
+            if (y == y1) break; // once reach the end point, stop processing
+            
+            if(p1 >=0) {
+                x+=dir_x;
+                p1 -= 2 * dy;
+            }
+            if (p2 >=0) {
+                z+=dir_z;
+                p2 -= 2 * dy;
+            }
+            p1 += 2 * dx;
+            p2 += 2 * dz;
+        }
+    };
+
+    auto drawLineD = [&]() {
+        if (z0 > z1) {
+            std::swap(x0,x1);
+            std::swap(y0,y1);
+            std::swap(z0,z1);
+        }
+        //direction control for non-driving axes 
+        int dir_x = (x1 >= x0) ? 1: -1;
+        int dir_y = (y1 >= y0) ? 1 : -1;
+
+        // decision parameters
+        int p1 = 2 * dy - dz;
+        int p2 = 2 * dx - dz;
+
+        int x = x0, y = y0;
+
+        for (int z= z0; z <= z1; ++z) {
+            voxels.emplace_back(Vector3i(x,y,z));
+            if (z == z1) break; // once reach the end point, stop processing
+            
+            if(p1 >=0) {
+                y += dir_y;
+                p1 -= 2 * dz;
+            }
+            if (p2 >=0) {
+                x += dir_x;
+                p2 -= 2 * dz;
+            }
+            p1 += 2 * dy;
+            p2 += 2 * dx;
+        }
+    };
+
+    if (dx >= dy && dx >=dz) { // drawLineH
+        drawLineH();
+    } else if (dy >=dx && dy >=dz) { // drawLineV
+        drawLineV();
+    } else { // drawLineD
+        drawLineD();
+    }
+
     return voxels;
 }
 
+
+
+
 void OccupancyGrid::rayTrace(const Vector3d& start, const Vector3d& end) {
-    // TODO: Implement ray tracing
-    // PRIORITY: CRITICAL - Main occupancy update method
+    //Implement ray tracing - main occupancy update method
     Vector3i start_grid = world_to_grid(start);
     Vector3i end_grid = world_to_grid(end);
     
+    // only compute occupancy for valid rays
     if (is_InBounds(start_grid) && is_InBounds(end_grid)) {
-        update_occupied(end_grid);  // Temporary: just mark endpoint
+        std::vector<Vector3i> ray_voxels = draw_bresenham3d_line(start_grid,end_grid);
+        std::for_each(ray_voxels.begin(), ray_voxels.end()-1, 
+                        [this](const Vector3i& voxel) {
+                            if (is_InBounds(voxel)) {
+                                update_free(voxel);
+                            }
+                        });
+        update_occupied(end_grid);
     }
 }
 
