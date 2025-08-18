@@ -33,6 +33,8 @@ void ScanProcessor::processLidarScan(OccupancyGrid& grid, const Eigen::Matrix4d&
         }
     });
 
+    /* Enable only for debugging
     std::cout << "Scan completed. Best rayTrace: " << min_time 
               << " us, Worst rayTrace: " << max_time << " us\n";
+              */
 }

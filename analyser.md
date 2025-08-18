@@ -886,4 +886,5 @@ Extracted 245669 occupied voxels from 245669 tracked voxels (vs 38869740 total v
 Voxel extraction time: 0.0204954 seconds.
 Visualising Voxels using open3D ===
 Visualizing 245669 occupied voxels...
-```
+Visualization time: 49.313 seconds.
+````

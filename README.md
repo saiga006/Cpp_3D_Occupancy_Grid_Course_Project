@@ -115,6 +115,28 @@ The detailed requirements and goals for this project are outlined in the officia
 
 [View Project Assignment](./project_assignment.pdf)
 
+### Requirements Compliance
+
+#### Mandatory Requirements
+
+| Requirement | Implementation Details |
+|-------------|----------------|
+| **Modern CMake** | CMakeLists.txt uses modern practices with target_* commands |
+| **Custom Class** | OccupancyGrid, DataAnalyzer, ScanProcessor classes |
+| **STL Algorithm** | std::for_each, std::reduce, std::minmax_element, std::clamp |
+| **STL Container** | std::vector, std::unordered_set, std::array |
+| **Lambda Functions** | Multiple lambdas in Bresenham algorithm (drawLineH, drawLineV, drawLineD) |
+
+#### Core Functionality
+
+| Feature | Implementation Details |
+|---------|----------------|
+| **3D Bresenham Algorithm** | draw_bresenham3d_line() with complete 3D implementation |
+| **Occupancy Grid Mapping** | Log-odds updates via update_occupied() and update_free() |
+| **Data Loading API** | Uses dataloader::Dataset as specified |
+| **Open3D Visualization** | visualize() function called with occupied voxels |
+| **Comprehensive Timing** | Average scan time, total time, detailed statistics |
+
 ## References
 
 This project was developed with the help of the following educational resources:
@@ -122,4 +144,103 @@ This project was developed with the help of the following educational resources:
 -   **Bresenham's Line Algorithm Visualization**: A clear visual explanation of the 2D Bresenham's algorithm, which forms the basis for the 3D implementation in this project. [Watch on YouTube](https://youtu.be/8gIhNSAXYcQ).
 -   **Bresenham's Line Algorithm Coding Tutorial**: A coding tutorial for a 2D implementation of Bresenham's algorithm that was adapted to 3D for this project. [Watch on YouTube](https://youtu.be/CceepU1vIKo).
 -   **SLAM Lecture on Occupancy Grid Mapping**: A comprehensive lecture covering the theory behind occupancy grid maps, including the log-odds representation, inverse sensor models, and the static binary Bayes filter, all of which are fundamental concepts for this project. [Watch on YouTube](https://youtu.be/v-Rm9TUG9LA).
+
+## Output Logs
+
+### Final Execution Output
+
+```bash
+saiga@sai-Ideapad:~/Downloads/ModernCppProject2025/build$ ./occupancy_grid_main ../src/Data
+Loading dataset...
+Found 6770 scans
+
+=== ANALYZING WORKSPACE ===
+Analyzing 6770 poses...
+Processed 0/6770 scans...
+Processed 338/6770 scans...
+Processed 676/6770 scans...
+Processed 1014/6770 scans...
+Processed 1352/6770 scans...
+Processed 1690/6770 scans...
+Processed 2028/6770 scans...
+Processed 2366/6770 scans...
+Processed 2704/6770 scans...
+Processed 3042/6770 scans...
+Processed 3380/6770 scans...
+Processed 3718/6770 scans...
+Processed 4056/6770 scans...
+Processed 4394/6770 scans...
+Processed 4732/6770 scans...
+Processed 5070/6770 scans...
+Processed 5408/6770 scans...
+Processed 5746/6770 scans...
+Processed 6084/6770 scans...
+Processed 6422/6770 scans...
+Processed 6760/6770 scans...
+=== WORKSPACE ANALYSIS ===
+Robot trajectory bounds:
+  Min: -135.352 -219.638 -7.10028
+  Max: 141.576  124.18 40.7033
+  Range: 276.928 343.819 47.8035
+Total poses: 6770
+Total points processed: 432690151
+Dataset Analysis time: 26.0093 seconds 
+
+=== OPTIMAL GRID CONFIGURATION ===
+Origin: -163.1 -254.1  -11.9
+Dimensions: 3324×4126×574
+Resolution: 0.1m (10cm voxels)
+Total voxels: 7872308976
+Estimated memory: 30030.5 MB
+Grid covers: [-163.1 -254.1  -11.9] to [169.3 158.5  45.5]
+WARNING: Large memory usage! Consider:
+  - Increasing resolution (e.g., 0.2m instead of 0.1m)
+  - Reducing safety margin
+  - Processing subset of data first
+
+=== APPLYING OPTIMIZATIONS ===
+Auto-adjusted resolution to: 0.5m
+Optimized memory usage: 148.276 MB
+
+=== OPTIMIZED GRID CONFIGURATION ===
+Origin: -138.2 -223.1   -7.6
+Dimensions: 565×702×98
+Resolution: 0.5m (50cm per voxels)
+Total voxels: 38869740
+Estimated memory: 148.276 MB
+Grid covers: [-138.2 -223.1   -7.6] to [144.3 127.9  41.4]
+
+=== STARTING MAPPING ===
+OccupancyGrid3D initialized:
+  Dimensions: 565×702×98
+  Resolution: 0.5m
+  Origin: -138.2 -223.1   -7.6
+  Total voxels: 38869740
+Grid creation time: 0.048459 seconds 
+
+=== PROCESSING LIDAR SCANS ===
+Mapped :: 0/6770 scans...
+Mapped :: 677/6770 scans...
+Mapped :: 1354/6770 scans...
+Mapped :: 2031/6770 scans...
+Mapped :: 2708/6770 scans...
+Mapped :: 3385/6770 scans...
+Mapped :: 4062/6770 scans...
+Mapped :: 4739/6770 scans...
+Mapped :: 5416/6770 scans...
+Mapped :: 6093/6770 scans...
+Mapping completed!
+=== SCAN STATISTICS ===
+Total scans processed: 6770
+Total execution time: 274.296 seconds
+Best scan time: 0.0155139 seconds Worst scan time: 0.0891447 seconds 
+Average time per scan: 40.3671 ms
+Scan rate: 24.6814 scans/second
+=== EXTRACTING OCCUPIED VOXELS ===
+Extracted 245669 occupied voxels from 245669 tracked voxels (vs 38869740 total voxels)
+Voxel extraction time: 0.018703 seconds.
+Visualising Voxels using open3D ===
+Visualizing 245669 occupied voxels...
+Visualization time: 49.313 seconds.
+```
 

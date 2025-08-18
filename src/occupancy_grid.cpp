@@ -67,7 +67,7 @@ void OccupancyGrid::update_occupied(const Vector3i& idx) {
          LOG_ODDS_MIN, LOG_ODDS_MAX);
 
     float prob = 1.0f / (1.0f + std::exp(-grid_data[index]));
-    if (prob > 0.5f) {  // Threshold for "occupied"
+    if (prob > OCCUPANCY_THRESHOLD) {  // Threshold for "occupied"
         occupied_cells.emplace(idx);
     }
 }
@@ -80,7 +80,7 @@ void OccupancyGrid::update_free(const Vector3i& idx) {
          LOG_ODDS_MIN, LOG_ODDS_MAX);
 
     float prob = 1.0f / (1.0f + std::exp(-grid_data[index]));
-    if (prob <= 0.5f) {
+    if (prob <= OCCUPANCY_THRESHOLD) {
         occupied_cells.erase(idx);
     }
 }

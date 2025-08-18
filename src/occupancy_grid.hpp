@@ -8,6 +8,7 @@
 using Vector3dVector = std::vector<Eigen::Vector3d>;
 using Vector3d = Eigen::Vector3d;
 using Vector3i = Eigen::Vector3i;
+constexpr float OCCUPANCY_THRESHOLD = 0.5f;
  
 class OccupancyGrid {
     private:

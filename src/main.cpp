@@ -10,7 +10,7 @@
 #include "visualizer.hpp"
 //#define TEST
 
-constexpr float OCCUPANCY_THRESHOLD = 0.5f;
+
 
 void printTimingStats(const std::vector<double>& scan_times, double total_time) {
     std::cout << "=== SCAN STATISTICS ===" << std::endl;
