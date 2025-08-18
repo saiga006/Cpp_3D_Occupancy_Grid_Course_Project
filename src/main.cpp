@@ -148,8 +148,8 @@ int main(int argc, char* argv[]) {
             std::cout << "Mapped :: " << i << "/" << dataset.size() << " scans..." << std::endl;
             scan_count++;
             if (scan_count > 1) {
-                // TODO: fix this issue: for now: restrict the scan processing to 10% of lidar dataset, as the scan time reaches 250 seconds.
-                break;
+                // uncomment only for debugging incase of performance bottleneck: for now: restrict the scan processing to 10% of lidar dataset, as the scan time reaches 250 seconds.
+                //break;
             }
         }
     }

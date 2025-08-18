@@ -20,13 +20,27 @@ class OccupancyGrid {
         // Hash function for Vector3i
         struct Vector3iHash {
             size_t operator()(const Eigen::Vector3i& v) const {
-                return std::hash<int>()(v.x()) ^ 
-                       (std::hash<int>()(v.y()) << 1) ^
-                       (std::hash<int>()(v.z()) << 2);
+                // Morton encoding for better spatial locality
+                const size_t x = static_cast<size_t>(v.x());
+                const size_t y = static_cast<size_t>(v.y());
+                const size_t z = static_cast<size_t>(v.z());
+                
+                // FNV-1a hash variant optimized for integers
+                size_t hash = 2166136261u;
+                hash ^= x; hash *= 16777619u;
+                hash ^= y; hash *= 16777619u;
+                hash ^= z; hash *= 16777619u;
+                return hash;
             }
         };
+
+        struct Vector3iEqual {
+            bool operator()(const Eigen::Vector3i& lhs, const Eigen::Vector3i& rhs) const {
+                return lhs.x() == rhs.x() && lhs.y() == rhs.y() && lhs.z() == rhs.z();
+            }
+        };        
         // additional storage for fast lookup of occupied cells, would be updated as part of ray tracing
-        std::unordered_set<Vector3i,Vector3iHash> occupied_cells;
+        std::unordered_set<Vector3i,Vector3iHash, Vector3iEqual> occupied_cells;
 
         // connects the start and end point of lidar ray in voxel map
         std::vector<Vector3i> draw_bresenham3d_line(const Vector3i& start, const Vector3i& end) const;
@@ -57,20 +71,3 @@ class OccupancyGrid {
         void update_occupied(const Vector3i& idx);
         */
     };
-
-
-
-// namespace dataloader
-// {
-//     class Dataset
-//     {
-//     public:
-//         Dataset(const std::string &data_dir);
-//         std::size_t size() const { return pointcloud_files_.size(); }
-//         PoseAndCloud operator[](const int idx) const;
-
-//     private:
-//         std::vector<std::string> pointcloud_files_;
-//         std::vector<Eigen::Matrix4d> poses_;
-//     };
-// } // namespace dataloader
