@@ -22,17 +22,10 @@ WorkspaceBounds DataAnalyzer::analyzeDataset(const dataloader::Dataset& dataset,
         max_coords = max_coords.cwiseMax(robot_pos);
         
         if (include_sensor_points) {
+            const Eigen::Matrix3d rotation = pose.block<3,3>(0,0);
             // Transform sensor points to world frame and include in bounds
             for (const auto& sensor_point : sensor_points) {
-                // Manual transformation
-                Eigen::Vector4d point_homogeneous;
-                point_homogeneous(0) = sensor_point(0);
-                point_homogeneous(1) = sensor_point(1);
-                point_homogeneous(2) = sensor_point(2);
-                point_homogeneous(3) = 1.0;
-                
-                Eigen::Vector4d world_point_h = pose * point_homogeneous;
-                Eigen::Vector3d world_point = world_point_h.head<3>();
+                Eigen::Vector3d world_point = rotation * sensor_point + robot_pos;
                 
                 // Update bounds
                 min_coords = min_coords.cwiseMin(world_point);
@@ -42,7 +35,7 @@ WorkspaceBounds DataAnalyzer::analyzeDataset(const dataloader::Dataset& dataset,
         }
         
         // Progress indicator
-        if (idx % (dataset.size() / 10) == 0) {
+        if (idx % (dataset.size() / 20) == 0) {
             std::cout << "Processed " << idx << "/" << dataset.size() << " scans..." << std::endl;
         }
     }
@@ -83,5 +76,7 @@ std::array<size_t, 3> DataAnalyzer::estimateGridDimensions(const WorkspaceBounds
     
     return dimensions;
 }
+
+
 
 

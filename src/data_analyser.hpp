@@ -30,4 +30,5 @@ public:
     static std::array<size_t, 3> estimateGridDimensions(const WorkspaceBounds& bounds,
                                                        double resolution,
                                                        double safety_margin = 0.15);
+
 };

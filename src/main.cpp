@@ -1,8 +1,36 @@
 #include <iostream>
+#include <chrono>
+#include <algorithm>
+#include <vector>
+#include <numeric>
+#include <functional>
 #include "occupancy_grid.hpp"
 #include "data_analyser.hpp"
+#include "scan_processor.hpp"
+#include "visualizer.hpp"
+//#define TEST
 
-#define TEST
+constexpr float OCCUPANCY_THRESHOLD = 0.5f;
+
+void printTimingStats(const std::vector<double>& scan_times, double total_time) {
+    std::cout << "=== SCAN STATISTICS ===" << std::endl;
+    if (scan_times.empty()) {
+
+        std::cout << "No scan data available!" << std::endl;
+        return;
+    }
+    
+    double avg_scan_time = std::reduce(scan_times.begin(), scan_times.end(), 0.0,std::plus<double>()) / scan_times.size();
+    const auto [min,max] = std::minmax_element(begin(scan_times), end(scan_times));
+    std::cout << "Total scans processed: " << scan_times.size() << std::endl;
+    std::cout << "Total execution time: " << total_time << " seconds" << std::endl;
+    std::cout << "Best scan time: " << *min << " seconds " << "Worst scan time: " << *max << " seconds " << std::endl;
+    std::cout << "Average time per scan: " << avg_scan_time * 1000 << " ms" << std::endl;
+    std::cout << "Scan rate: " << scan_times.size() / total_time << " scans/second" << std::endl;
+}
+
+
+
 
 int main(int argc, char* argv[]) {
 
@@ -13,7 +41,7 @@ int main(int argc, char* argv[]) {
     }
     
     const std::string data_dir = argv[1];
-    
+    auto start_analys_time = std::chrono::high_resolution_clock::now();
     // Load dataset
     std::cout << "Loading dataset..." << std::endl;
     dataloader::Dataset dataset(data_dir);
@@ -23,7 +51,9 @@ int main(int argc, char* argv[]) {
     std::cout << "\n=== ANALYZING WORKSPACE ===" << std::endl;
     WorkspaceBounds bounds = DataAnalyzer::analyzeDataset(dataset, true);
     bounds.printSummary();
-    
+    auto end_analys_time = std::chrono::high_resolution_clock::now();
+    double total_analysis_time = std::chrono::duration<double>(end_analys_time - start_analys_time).count();
+    std::cout << "Dataset Analysis time: " << total_analysis_time << " seconds " << std::endl;
     // Determine optimal parameters
     double resolution = 0.1;  // 10cm voxels - adjust as needed
     double safety_margin = 0.10;  // 10% margin around workspace
@@ -58,8 +88,8 @@ int main(int argc, char* argv[]) {
         double target_voxels = (target_memory_gb * 1024 * 1024 * 1024) / sizeof(float);
         double optimized_resolution = std::pow(volume / target_voxels, 1.0/3.0);
         
-        resolution = std::max(optimized_resolution, 0.2);  // Minimum 20cm
-        safety_margin = 0.05;  // Reduced safety margin
+        resolution = std::max(optimized_resolution, 0.5);  // Minimum 50cm
+        safety_margin = 0.01;  // Reduced safety margin
         
         std::cout << "Auto-adjusted resolution to: " << resolution << "m" << std::endl;
         
@@ -83,12 +113,75 @@ int main(int argc, char* argv[]) {
                 << (optimal_origin + Eigen::Vector3d(grid_dims[0]*resolution, grid_dims[1]*resolution, grid_dims[2]*resolution)).transpose() << "]" << std::endl;
     }
 
-
-    
-    // Create optimally sized grid
-    //OccupancyGrid grid(grid_dims, resolution, optimal_origin);
-    
     std::cout << "\n=== STARTING MAPPING ===" << std::endl;
+    auto start_time = std::chrono::high_resolution_clock::now();
+    // Create optimally sized grid
+    OccupancyGrid grid(grid_dims, resolution, optimal_origin);
+    auto end_time = std::chrono::high_resolution_clock::now();
+    double total_time = std::chrono::duration<double>(end_time - start_time).count();
+    std::cout << "Grid creation time: " << total_time << " seconds " << std::endl;
+    
+    std::cout << "\n=== PROCESSING LIDAR SCANS ===" << std::endl;
+    std::vector<double> scan_times;
+    scan_times.reserve(dataset.size());
+
+    auto mapping_start = std::chrono::high_resolution_clock::now();
+
+    // test var
+    int scan_count = 0;
+    // Process each scan
+    for (size_t i = 0; i < dataset.size(); ++i) {
+        auto scan_start = std::chrono::high_resolution_clock::now();
+        
+        // Load pose and pointcloud from the dataset
+        const auto& [pose, pointcloud] = dataset[i];
+        
+        // Process the scan using your function
+        ScanProcessor::processLidarScan(grid, pose, pointcloud);
+        
+        auto scan_end = std::chrono::high_resolution_clock::now();
+        double scan_time = std::chrono::duration<double>(scan_end - scan_start).count();
+        scan_times.emplace_back(scan_time);
+        
+        // Progress indicator
+        if (i % (dataset.size() / 10) == 0) {
+            std::cout << "Mapped :: " << i << "/" << dataset.size() << " scans..." << std::endl;
+            scan_count++;
+            if (scan_count > 1) {
+                // TODO: fix this issue: for now: restrict the scan processing to 10% of lidar dataset, as the scan time reaches 250 seconds.
+                break;
+            }
+        }
+    }
+
+    auto mapping_end = std::chrono::high_resolution_clock::now();
+    double total_mapping_time = std::chrono::duration<double>(mapping_end - mapping_start).count();
+
+    std::cout << "Mapping completed!" << std::endl;
+    printTimingStats(scan_times, total_mapping_time);
+
+    std::cout << "=== EXTRACTING OCCUPIED VOXELS ===" << std::endl;
+    auto extraction_start = std::chrono::high_resolution_clock::now();
+    Vector3dVector occupied_voxels = grid.getOccupiedVoxels(OCCUPANCY_THRESHOLD);
+    auto extraction_end = std::chrono::high_resolution_clock::now();
+    double extraction_time = std::chrono::duration<double>(extraction_end - extraction_start).count();
+    std::cout << "Voxel extraction time: " << extraction_time << " seconds." << std::endl;
+
+    if(!occupied_voxels.empty()) {
+
+        std::cout << "Visualising Voxels using open3D ===" << std::endl;
+        std::cout << "Visualizing " << occupied_voxels.size() << " occupied voxels..." << std::endl;
+        auto viz_start = std::chrono::high_resolution_clock::now();
+        visualize(occupied_voxels);  // Calls open3d API
+        auto viz_end = std::chrono::high_resolution_clock::now();
+        double viz_time = std::chrono::duration<double>(viz_end - viz_start).count();
+        std::cout << "Visualization time: " << viz_time << " seconds." << std::endl;
+    } else {
+        std::cout << "No occupied voxels found! Check mapping pipeline." <<  std::endl;
+    }
+
+
+
  #else
         // Test with small grid first
     std::cout << "=== TESTING BASIC FUNCTIONALITY ===" << std::endl;

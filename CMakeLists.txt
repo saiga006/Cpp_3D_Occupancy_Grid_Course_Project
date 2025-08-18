@@ -24,10 +24,21 @@ target_include_directories(visualizer INTERFACE src/visualizer)
 target_link_libraries(visualizer INTERFACE Open3D::Open3D Eigen3::Eigen)
 
 #will have occupancy grid logic
-add_executable(occupancy_grid_main src/main.cpp src/occupancy_grid.cpp src/data_analyser.cpp)
+add_executable(occupancy_grid_main src/main.cpp src/occupancy_grid.cpp src/data_analyser.cpp src/scan_processor.cpp)
 
 target_link_libraries(occupancy_grid_main PRIVATE dataloader visualizer)
 
 target_compile_options(occupancy_grid_main PRIVATE -Wall -Wextra)
 
 target_compile_features(occupancy_grid_main PRIVATE cxx_std_17)
+
+# Release build optimizations
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_compile_options(occupancy_grid_main PRIVATE 
+        -O3                 # Maximum optimization
+        -DNDEBUG           # Disable assertions  
+        -march=native      # CPU-specific optimization
+        -ffast-math        # Faster floating-point math
+        -funroll-loops     # Loop unrolling
+    )
+endif()

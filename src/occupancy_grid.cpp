@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <iostream>
 #include <cmath>
+#include <chrono>
 
 
 // Log-odds constants
@@ -16,8 +17,9 @@ OccupancyGrid::OccupancyGrid(const std::array<size_t, 3>& dimensions,
 
     size_t total_cells = grid_dimensions[0] * grid_dimensions[1] * grid_dimensions[2];
     grid_data.resize(total_cells,0.0f);
-    size_t estimated_occupancy_size = total_cells / 1000; // estimate %0.1 occupancy
+    size_t estimated_occupancy_size = total_cells / 100; // estimate %1 occupancy
     occupied_cells.reserve(estimated_occupancy_size);
+    occupied_cells.max_load_factor(0.75f);
     std::cout << "OccupancyGrid3D initialized:" << std::endl;
     std::cout << "  Dimensions: " << grid_dimensions[0] << "×" << grid_dimensions[1] << "×" << grid_dimensions[2] << std::endl;
     std::cout << "  Resolution: " << voxel_resolution << "m" << std::endl;
@@ -64,10 +66,9 @@ void OccupancyGrid::update_occupied(const Vector3i& idx) {
     grid_data[index] = std::clamp(grid_data[index]+ LOG_ODDS_OCCUPIED,
          LOG_ODDS_MIN, LOG_ODDS_MAX);
 
-    // NEW: Track in auxiliary structure
     float prob = 1.0f / (1.0f + std::exp(-grid_data[index]));
     if (prob > 0.5f) {  // Threshold for "occupied"
-        occupied_cells.insert(idx);
+        occupied_cells.emplace(idx);
     }
 }
 
@@ -92,6 +93,7 @@ float OccupancyGrid::getOccupancy(const Vector3i& grid_index) const {
 
 std::vector<Vector3i> OccupancyGrid::draw_bresenham3d_line(const Vector3i& start, const Vector3i& end) const {
     //Implement 3D Bresenham algorithm - adapted from 2D impl. mentioned in https://youtu.be/CceepU1vIKo, https://youtu.be/8gIhNSAXYcQ
+    //std::cout << "bresenham3d line algo invoked !!" << std::endl;
     std::vector<Vector3i> voxels;
 
     int x0 = start.x(), y0 = start.y(), z0 = start.z();
@@ -119,7 +121,7 @@ std::vector<Vector3i> OccupancyGrid::draw_bresenham3d_line(const Vector3i& start
         int y = y0, z = z0;
 
         for (int x= x0; x <= x1; ++x) {
-            voxels.emplace_back(Vector3i(x,y,z));
+            voxels.emplace_back(x,y,z);
             if (x == x1) break; // once reach the end point, stop processing
             
             if(p1 >=0) {
@@ -152,7 +154,7 @@ std::vector<Vector3i> OccupancyGrid::draw_bresenham3d_line(const Vector3i& start
         int x = x0, z = z0;
 
         for (int y= y0; y <= y1; ++y) {
-            voxels.emplace_back(Vector3i(x,y,z));
+            voxels.emplace_back(x,y,z);
             if (y == y1) break; // once reach the end point, stop processing
             
             if(p1 >=0) {
@@ -185,7 +187,7 @@ std::vector<Vector3i> OccupancyGrid::draw_bresenham3d_line(const Vector3i& start
         int x = x0, y = y0;
 
         for (int z= z0; z <= z1; ++z) {
-            voxels.emplace_back(Vector3i(x,y,z));
+            voxels.emplace_back(x,y,z);
             if (z == z1) break; // once reach the end point, stop processing
             
             if(p1 >=0) {
@@ -219,15 +221,25 @@ void OccupancyGrid::rayTrace(const Vector3d& start, const Vector3d& end) {
     //Implement ray tracing - main occupancy update method
     Vector3i start_grid = world_to_grid(start);
     Vector3i end_grid = world_to_grid(end);
-    
+
+    // Early termination - don't trace if start equals end
+    if (start_grid == end_grid) {
+        if (is_InBounds(end_grid)) {
+            update_occupied(end_grid);
+        }
+        return;
+    }
     // only compute occupancy for valid rays
     if (is_InBounds(start_grid) && is_InBounds(end_grid)) {
+        auto bresenham_start = std::chrono::high_resolution_clock::now();
         std::vector<Vector3i> ray_voxels = draw_bresenham3d_line(start_grid,end_grid);
+        auto bresenham_end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::micro> bresenham_time = bresenham_end - bresenham_start;
+        //std::cout << "Bresenham 3D took: " << bresenham_time.count() << " microseconds." << std::endl;
+
         std::for_each(ray_voxels.begin(), ray_voxels.end()-1, 
                         [this](const Vector3i& voxel) {
-                            if (is_InBounds(voxel)) {
                                 update_free(voxel);
-                            }
                         });
         update_occupied(end_grid);
     }
