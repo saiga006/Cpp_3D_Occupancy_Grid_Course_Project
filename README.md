@@ -1,6 +1,6 @@
 # 3D Occupancy Grid Mapping from LiDAR Scans
 
-This is a C++ Uni Bonn course project for SoSe 25, which demonstrates the creation of a 3D occupancy grid map from a series of LiDAR scans and vehicle poses. It leverages modern C++17 features, the Eigen library for efficient linear algebra, and the Open3D library for visualization.
+This is a C++ Uni Bonn course project for SoSe 25, which demonstrates the creation of a 3D occupancy grid map from a series of LiDAR scans taken from the LiDAR sensor - Hesai XT-32, which is a 32-beam spinning 3D LiDAR, mounted on a ClearPath Husky robotic platform. It leverages modern C++17 features, the Eigen library for efficient linear algebra, and the Open3D library for visualization.
 
 The application processes a dataset of point clouds, determines the optimal grid size and resolution, and then integrates each scan to build a map of the environment, distinguishing between free and occupied space.
 
