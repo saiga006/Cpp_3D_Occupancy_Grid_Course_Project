@@ -34,6 +34,39 @@ The project is organized into several components to separate concerns:
 - **Performance Optimized**: Written with modern C++ and performance in mind, leveraging stl algos, efficient stl containers, and release build optimizations.
 - **3D Visualization**: Uses Open3D to render the final occupancy grid.
 
+## Results
+
+The following images show the final 3D occupancy grid generated from the full dataset, viewed from different angles.
+
+**Top-Down View:**
+![Top-Down View of the Occupancy Grid](images/3d_occupancy_grid_top_view.png)
+
+**Side View:**
+![Side View of the Occupancy Grid](images/3d_occupancy_grid_side_view.png)
+
+**Inside View:**
+![Inside View of the Occupancy Grid](images/3d_occupancy_grid_inside_view.png)
+
+### Performance Statistics
+
+The following statistics were recorded after processing the entire dataset of 6770 scans. The grid was configured with the following parameters:
+
+- **Dataset Range (X, Y, Z)**: 276.9m, 343.8m, 47.8m
+- **Grid Coverage**: From [-138.2, -223.1, -7.6] to [144.3, 127.9, 41.4]
+- **Grid Origin**: -138.2, -223.1, -7.6
+- **Grid Resolution**: 0.5m (50cm per voxel)
+- **Grid Dimensions**: 565 x 702 x 98
+- **Total Voxels**: 38,869,740
+
+Performance results with the hash collision optimization enabled:
+
+- **Total Scans Processed**: 6770
+- **Total Execution Time**: 277.43 seconds
+- **Average Time per Scan**: 40.83 ms
+- **Scan Rate**: 24.4 scans/second
+- **Final Occupied Voxels**: 245,669
+- **Voxel Extraction Time**: 0.02 seconds
+
 ## Dependencies
 
 - **Eigen3**: For matrix and vector operations.
@@ -75,39 +108,6 @@ To run the application, provide the path to the data directory from the `build` 
 ```bash
 ./occupancy_grid_main ../src/Data
 ```
-
-## Results
-
-The following images show the final 3D occupancy grid generated from the full dataset, viewed from different angles.
-
-**Top-Down View:**
-![Top-Down View of the Occupancy Grid](images/3d_occupancy_grid_top_view.png)
-
-**Side View:**
-![Side View of the Occupancy Grid](images/3d_occupancy_grid_side_view.png)
-
-**Inside View:**
-![Inside View of the Occupancy Grid](images/3d_occupancy_grid_inside_view.png)
-
-### Performance Statistics
-
-The following statistics were recorded after processing the entire dataset of 6770 scans. The grid was configured with the following parameters:
-
-- **Dataset Range (X, Y, Z)**: 276.9m, 343.8m, 47.8m
-- **Grid Coverage**: From [-138.2, -223.1, -7.6] to [144.3, 127.9, 41.4]
-- **Grid Origin**: -138.2, -223.1, -7.6
-- **Grid Resolution**: 0.5m (50cm per voxel)
-- **Grid Dimensions**: 565 x 702 x 98
-- **Total Voxels**: 38,869,740
-
-Performance results with the hash collision optimization enabled:
-
-- **Total Scans Processed**: 6770
-- **Total Execution Time**: 277.43 seconds
-- **Average Time per Scan**: 40.83 ms
-- **Scan Rate**: 24.4 scans/second
-- **Final Occupied Voxels**: 245,669
-- **Voxel Extraction Time**: 0.02 seconds
 
 ## Project Assignment
 
